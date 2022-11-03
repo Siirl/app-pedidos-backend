@@ -75,7 +75,7 @@ export class PersonaController {
     let clave = this.servicioAutenticacion.GenerarClave();
     let claveCifrada = this.servicioAutenticacion.CifrarClave(clave);
     persona.clave = claveCifrada;
-    persona.rol = "invitado";
+    persona.rol = "cliente";
     let p = await this.personaRepository.create(persona);
 
     //Notificar al usuario
@@ -89,6 +89,7 @@ export class PersonaController {
     return p;
 
   }
+
   @authenticate("admin")
   @get('/personas/count')
   @response(200, {
