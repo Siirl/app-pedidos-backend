@@ -1,3 +1,4 @@
+import {authenticate} from '@loopback/authentication';
 import {service} from '@loopback/core';
 import {
   Count,
@@ -52,7 +53,6 @@ export class PersonaController {
   }
 
 
-
   @post('/personas')
   @response(200, {
     description: 'Persona model instance',
@@ -75,6 +75,7 @@ export class PersonaController {
     let clave = this.servicioAutenticacion.GenerarClave();
     let claveCifrada = this.servicioAutenticacion.CifrarClave(clave);
     persona.clave = claveCifrada;
+    persona.rol = "invitado";
     let p = await this.personaRepository.create(persona);
 
     //Notificar al usuario
@@ -88,7 +89,7 @@ export class PersonaController {
     return p;
 
   }
-
+  @authenticate("admin")
   @get('/personas/count')
   @response(200, {
     description: 'Persona model count',
@@ -99,7 +100,7 @@ export class PersonaController {
   ): Promise<Count> {
     return this.personaRepository.count(where);
   }
-
+  @authenticate("admin")
   @get('/personas')
   @response(200, {
     description: 'Array of Persona model instances',
@@ -117,7 +118,7 @@ export class PersonaController {
   ): Promise<Persona[]> {
     return this.personaRepository.find(filter);
   }
-
+  @authenticate("admin")
   @patch('/personas')
   @response(200, {
     description: 'Persona PATCH success count',
@@ -136,7 +137,7 @@ export class PersonaController {
   ): Promise<Count> {
     return this.personaRepository.updateAll(persona, where);
   }
-
+  @authenticate("admin")
   @get('/personas/{id}')
   @response(200, {
     description: 'Persona model instance',
@@ -152,7 +153,7 @@ export class PersonaController {
   ): Promise<Persona> {
     return this.personaRepository.findById(id, filter);
   }
-
+  @authenticate("admin")
   @patch('/personas/{id}')
   @response(204, {
     description: 'Persona PATCH success',
@@ -170,7 +171,7 @@ export class PersonaController {
   ): Promise<void> {
     await this.personaRepository.updateById(id, persona);
   }
-
+  @authenticate("admin")
   @put('/personas/{id}')
   @response(204, {
     description: 'Persona PUT success',
@@ -181,7 +182,7 @@ export class PersonaController {
   ): Promise<void> {
     await this.personaRepository.replaceById(id, persona);
   }
-
+  @authenticate("admin")
   @del('/personas/{id}')
   @response(204, {
     description: 'Persona DELETE success',
