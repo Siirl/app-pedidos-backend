@@ -1,4 +1,3 @@
-import {authenticate} from '@loopback/authentication';
 import {service} from '@loopback/core';
 import {
   Count,
@@ -14,10 +13,11 @@ import {
   response
 } from '@loopback/rest';
 import {Llaves} from '../config/llaves';
-import {Credenciales, Persona} from '../models';
+import {Credenciales, Persona, Recuperacionn} from '../models';
 import {PersonaRepository} from '../repositories';
 import {AutenticacionService} from '../services';
 const fetch = require('node-fetch');
+
 export class PersonaController {
   constructor(
     @repository(PersonaRepository)
@@ -51,6 +51,49 @@ export class PersonaController {
       throw new HttpErrors[401]("Datos invalidos");
     }
   }
+
+  @post("/recuperarClave", {
+    responses: {
+      '200': {
+        description: "Recuperacion de contraseña"
+      }
+    }
+  })
+  async recoveryPassword(
+    @requestBody() recuperacionn: Recuperacionn,
+    @param.filter(Persona, {exclude: 'where'}) filter?: FilterExcludingWhere<Persona>,
+    @param.where(Persona) where?: Where<Persona>
+  ) {
+    let p = await this.personaRepository.findById(recuperacionn.id, filter);
+    if (p) {
+      let clave = this.servicioAutenticacion.GenerarClave();
+      let claveCifrada = this.servicioAutenticacion.CifrarClave(clave);
+      p.clave = claveCifrada;
+      this.updateAll(p, where)
+      let destino = p.correo;
+      let asunto = 'Reestablecimiento de contraseña';
+      let contenido = `Hola ${p.nombres}, se ha realizado con exito el restablecimiento de su contraseña por favor para poder ingresar a la web utilice la siguiente contraseña: ${clave}`;
+      fetch(`${Llaves.urlServicioNotificaciones}/envio-correo?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
+        .then((data: any) => {
+          console.log(data);
+        })
+      let mensaje = 'Su contraseña ha sido restablecida, por favor revisar su correo electronico';
+      let telefono = p.celular;
+      fetch(`${Llaves.urlServicioNotificaciones}/sms?mensaje=${mensaje}&telefono=${telefono}`)
+        .then((data: any) => {
+          console.log(data);
+        })
+      return {
+        datos: {
+          correo: "Su contraseña se reestablecio, por favor revise su correo: " + p.correo
+        }
+      }
+    } else {
+      throw new HttpErrors[401]("id no encontrado");
+    }
+  }
+
+
 
 
   @post('/personas')
@@ -90,7 +133,6 @@ export class PersonaController {
 
   }
 
-  @authenticate("admin")
   @get('/personas/count')
   @response(200, {
     description: 'Persona model count',
@@ -101,7 +143,7 @@ export class PersonaController {
   ): Promise<Count> {
     return this.personaRepository.count(where);
   }
-  @authenticate("admin")
+
   @get('/personas')
   @response(200, {
     description: 'Array of Persona model instances',
@@ -119,7 +161,7 @@ export class PersonaController {
   ): Promise<Persona[]> {
     return this.personaRepository.find(filter);
   }
-  @authenticate("admin")
+
   @patch('/personas')
   @response(200, {
     description: 'Persona PATCH success count',
@@ -138,7 +180,7 @@ export class PersonaController {
   ): Promise<Count> {
     return this.personaRepository.updateAll(persona, where);
   }
-  @authenticate("admin")
+
   @get('/personas/{id}')
   @response(200, {
     description: 'Persona model instance',
@@ -154,7 +196,7 @@ export class PersonaController {
   ): Promise<Persona> {
     return this.personaRepository.findById(id, filter);
   }
-  @authenticate("admin")
+
   @patch('/personas/{id}')
   @response(204, {
     description: 'Persona PATCH success',
@@ -172,7 +214,7 @@ export class PersonaController {
   ): Promise<void> {
     await this.personaRepository.updateById(id, persona);
   }
-  @authenticate("admin")
+
   @put('/personas/{id}')
   @response(204, {
     description: 'Persona PUT success',
@@ -183,7 +225,7 @@ export class PersonaController {
   ): Promise<void> {
     await this.personaRepository.replaceById(id, persona);
   }
-  @authenticate("admin")
+
   @del('/personas/{id}')
   @response(204, {
     description: 'Persona DELETE success',
