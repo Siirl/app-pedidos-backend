@@ -69,7 +69,7 @@ export class PersonaController {
       let clave = this.servicioAutenticacion.GenerarClave();
       let claveCifrada = this.servicioAutenticacion.CifrarClave(clave);
       p.clave = claveCifrada;
-      this.updateAll(p, where)
+      this.updateById(p.id + "", p)
       let destino = p.correo;
       let asunto = 'Reestablecimiento de contraseña';
       let contenido = `Hola ${p.nombres}, se ha realizado con exito el restablecimiento de su contraseña por favor para poder ingresar a la web utilice la siguiente contraseña: ${clave}`;
