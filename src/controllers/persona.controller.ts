@@ -13,7 +13,7 @@ import {
   response
 } from '@loopback/rest';
 import {Llaves} from '../config/llaves';
-import {Credenciales, Persona, Recuperacionn} from '../models';
+import {ClaveNuevaa, Credenciales, Persona, Recuperacionn} from '../models';
 import {PersonaRepository} from '../repositories';
 import {AutenticacionService} from '../services';
 const fetch = require('node-fetch');
@@ -72,7 +72,7 @@ export class PersonaController {
       this.updateById(p.id + "", p)
       let destino = p.correo;
       let asunto = 'Reestablecimiento de contraseña';
-      let contenido = `Hola ${p.nombres}, se ha realizado con exito el restablecimiento de su contraseña por favor para poder ingresar a la web utilice la siguiente contraseña: ${clave}`;
+      let contenido = `Hola ${p.nombres}, se ha realizado con exito el restablecimiento de su contraseña, para poder ingresar a la web utilice la siguiente contraseña: ${clave}`;
       fetch(`${Llaves.urlServicioNotificaciones}/envio-correo?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
         .then((data: any) => {
           console.log(data);
@@ -92,6 +92,45 @@ export class PersonaController {
       throw new HttpErrors[401]("id no encontrado");
     }
   }
+
+  @post("/cambiarClave", {
+    responses: {
+      '200': {
+        description: "Cambio de contraseña"
+      }
+    }
+  })
+  async cambiarClave(
+    @requestBody() claveNuevaa: ClaveNuevaa,
+    @param.filter(Persona, {exclude: 'where'}) filter?: FilterExcludingWhere<Persona>,
+    @param.where(Persona) where?: Where<Persona>
+  ) {
+    let p = await this.personaRepository.findById(claveNuevaa.id, filter);
+    if (p) {
+      let claveCifrada = this.servicioAutenticacion.CifrarClave(claveNuevaa.claveNueva);
+      p.clave = claveCifrada;
+      this.updateById(p.id + "", p)
+      let destino = p.correo;
+      let asunto = 'Contraseña modificada';
+      let contenido = `Hola ${p.nombres}, se ha realizado con exito el cambio de su contraseña, para poder ingresar a la web utilice la siguiente contraseña: ${claveNuevaa.claveNueva}`;
+      fetch(`${Llaves.urlServicioNotificaciones}/envio-correo?correo_destino=${destino}&asunto=${asunto}&contenido=${contenido}`)
+        .then((data: any) => {
+          console.log(data);
+        })
+      let mensaje = 'Su contraseña ha sido modificada con exito';
+      let telefono = p.celular;
+      fetch(`${Llaves.urlServicioNotificaciones}/sms?mensaje=${mensaje}&telefono=${telefono}`)
+        .then((data: any) => {
+          console.log(data);
+        })
+      return {
+        clave: "Su clave ha sido modificada exitosamente"
+      }
+    } else {
+      throw new HttpErrors[401]("Dato invalido por favor verifique los datos ingresados");
+    }
+  }
+
 
 
 

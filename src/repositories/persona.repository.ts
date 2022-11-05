@@ -1,7 +1,7 @@
-import {inject, Getter} from '@loopback/core';
-import {DefaultCrudRepository, repository, HasManyRepositoryFactory} from '@loopback/repository';
+import {Getter, inject} from '@loopback/core';
+import {DefaultCrudRepository, HasManyRepositoryFactory, repository} from '@loopback/repository';
 import {MongodbDataSource} from '../datasources';
-import {Persona, PersonaRelations, Pedido} from '../models';
+import {Pedido, Persona, PersonaRelations} from '../models';
 import {PedidoRepository} from './pedido.repository';
 
 export class PersonaRepository extends DefaultCrudRepository<
@@ -9,6 +9,10 @@ export class PersonaRepository extends DefaultCrudRepository<
   typeof Persona.prototype.id,
   PersonaRelations
 > {
+  filter: any;
+  indexOf(arg0: any): number {
+    throw new Error('Method not implemented.');
+  }
 
   public readonly pedidos: HasManyRepositoryFactory<Pedido, typeof Persona.prototype.id>;
 
